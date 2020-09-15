@@ -1,18 +1,19 @@
 import React from "react";
 import PropTypes from "prop-types";
+import Editor from "react-simple-code-editor";
+import { highlight, languages } from "prismjs/components/prism-core";
+import "prismjs/components/prism-clike";
+import "prismjs/components/prism-javascript";
 import { useFileText } from "../../hooks";
 import { getFileName } from "../../utils/utils";
 import { Button, RedButton } from "../Button";
-import { Textarea } from "../Textarea";
+import { EditorWrapper } from "./EditorWrapper";
+
 import css from "./style.css";
 
-function PlaintextEditor({ file, write, toggleEditFileMode }) {
+function JavascriptEditor({ file, write, toggleEditFileMode }) {
   const [value, setValue] = useFileText(file);
   const fileName = getFileName(file);
-
-  const handleChange = e => {
-    setValue(e.target.value);
-  };
 
   const handleSubmit = e => {
     e.preventDefault();
@@ -42,15 +43,17 @@ function PlaintextEditor({ file, write, toggleEditFileMode }) {
     >
       <div className={css.editor}>
         <i>{fileName}</i>
-        <Textarea
-          name="fileText"
-          value={value}
-          onChange={handleChange}
-          cols="30"
-          rows="10"
-        >
-          {value}
-        </Textarea>
+        <EditorWrapper>
+          <Editor
+            value={value}
+            onValueChange={code => setValue(code)}
+            highlight={code => highlight(code, languages.js)}
+            padding={10}
+            style={{
+              fontSize: 15
+            }}
+          />
+        </EditorWrapper>
       </div>
       <Button>Save File</Button>
       <RedButton onClick={handleDiscard}>Discard Changes</RedButton>
@@ -58,10 +61,10 @@ function PlaintextEditor({ file, write, toggleEditFileMode }) {
   );
 }
 
-PlaintextEditor.propTypes = {
+JavascriptEditor.propTypes = {
   file: PropTypes.object,
   write: PropTypes.func,
   toggleEditFileMode: PropTypes.func
 };
 
-export default PlaintextEditor;
+export default JavascriptEditor;

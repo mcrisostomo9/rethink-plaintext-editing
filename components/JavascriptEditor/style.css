@@ -1,4 +1,7 @@
 .editor {
   width: 640px;
   background-color: var(--color-white);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }

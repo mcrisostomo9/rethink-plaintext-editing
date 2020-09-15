@@ -1,19 +1,23 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect } from "react";
 import Head from "next/head";
 import PropTypes from "prop-types";
-import path from "path";
 import classNames from "classnames";
+import { Button } from "../components/Button";
+import { useFiles, useFileText } from "../hooks";
 
 import { listFiles } from "../lib/list-files";
 
 // Used below, these need to be registered
-import MarkdownEditor from "../MarkdownEditor";
+import MarkdownEditor from "../components/MarkdownEditor";
 import PlaintextEditor from "../components/PlaintextEditor";
+import JavascriptEditor from "../components/JavascriptEditor";
+import MarkdownPreviewer from "../components/MarkdownEditor/MarkdownPreviewer";
 
 import IconPlaintextSVG from "../public/icon-plaintext.svg";
 import IconMarkdownSVG from "../public/icon-markdown.svg";
 import IconJavaScriptSVG from "../public/icon-javascript.svg";
 import IconJSONSVG from "../public/icon-json.svg";
+import { getFileName } from "../utils/utils";
 
 import css from "./style.module.css";
 
@@ -25,6 +29,14 @@ const TYPE_TO_ICON = {
 };
 
 function FilesTable({ files, activeFile, setActiveFile }) {
+  const handleClickFile = file => {
+    if (activeFile) {
+      setActiveFile({ type: "SWITCH_ACTIVE_FILE", activeFile: file });
+    } else {
+      setActiveFile({ type: "SET_ACTIVE_FILE", activeFile: file });
+    }
+  };
+
   return (
     <div className={css.files}>
       <table>
@@ -42,7 +54,7 @@ function FilesTable({ files, activeFile, setActiveFile }) {
                 css.row,
                 activeFile && activeFile.name === file.name ? css.active : ""
               )}
-              onClick={() => setActiveFile(file)}
+              onClick={() => handleClickFile(file)}
             >
               <td className={css.file}>
                 <div
@@ -50,8 +62,8 @@ function FilesTable({ files, activeFile, setActiveFile }) {
                   dangerouslySetInnerHTML={{
                     __html: TYPE_TO_ICON[file.type]
                   }}
-                ></div>
-                {path.basename(file.name)}
+                />
+                {getFileName(file)}
               </td>
 
               <td>
@@ -76,49 +88,61 @@ FilesTable.propTypes = {
   setActiveFile: PropTypes.func
 };
 
-function Previewer({ file }) {
-  const [value, setValue] = useState("");
+function Previewer({ file, toggleEditFileMode }) {
+  const [value] = useFileText(file);
 
-  useEffect(() => {
-    (async () => {
-      setValue(await file.text());
-    })();
-  }, [file]);
-
+  const renderPreview = () => {
+    if (file.type === "text/markdown") {
+      return <MarkdownPreviewer file={file} />;
+    } else {
+      return value;
+    }
+  };
   return (
-    <div className={css.preview}>
-      <div className={css.title}>{path.basename(file.name)}</div>
-      <div className={css.content}>{value}</div>
+    <div className={css.previewContainer}>
+      <div className={css.preview}>
+        <div className={css.title}> {getFileName(file)}</div>
+        <div className={css.content}>{renderPreview()}</div>
+      </div>
+      <Button className={css.previewButton} onClick={toggleEditFileMode}>
+        Edit File
+      </Button>
     </div>
   );
 }
 
 Previewer.propTypes = {
-  file: PropTypes.object
+  file: PropTypes.object,
+  toggleEditFileMode: PropTypes.func
 };
 
 // Uncomment keys to register editors for media types
 const REGISTERED_EDITORS = {
-  // "text/plain": PlaintextEditor,
-  // "text/markdown": MarkdownEditor,
+  "text/plain": PlaintextEditor,
+  "text/markdown": MarkdownEditor,
+  "text/javascript": JavascriptEditor,
+  "application/json": JavascriptEditor
 };
 
 function PlaintextFilesChallenge() {
-  const [files, setFiles] = useState([]);
-  const [activeFile, setActiveFile] = useState(null);
+  const [state, dispatch] = useFiles();
 
   useEffect(() => {
     const files = listFiles();
-    setFiles(files);
+    dispatch({ type: "SET_FILES", files });
   }, []);
 
   const write = file => {
-    console.log("Writing... ", file.name);
-
-    // TODO: Write the file to the `files` array
+    const fileIndex = state.files.findIndex(f => f.name === file.name);
+    dispatch({ type: "WRITE_FILE", fileIndex, newFile: file });
   };
 
-  const Editor = activeFile ? REGISTERED_EDITORS[activeFile.type] : null;
+  const toggleEditFileMode = () =>
+    dispatch({ type: "SET_EDIT_FILE", editFile: !state.editFile });
+
+  const Editor = state.activeFile
+    ? REGISTERED_EDITORS[state.activeFile.type]
+    : null;
 
   return (
     <div className={css.page}>
@@ -136,9 +160,9 @@ function PlaintextFilesChallenge() {
         </header>
 
         <FilesTable
-          files={files}
-          activeFile={activeFile}
-          setActiveFile={setActiveFile}
+          files={state.files}
+          activeFile={state.activeFile}
+          setActiveFile={dispatch}
         />
 
         <div style={{ flex: 1 }}></div>
@@ -155,14 +179,25 @@ function PlaintextFilesChallenge() {
       </aside>
 
       <main className={css.editorWindow}>
-        {activeFile && (
+        {state.activeFile && (
           <>
-            {Editor && <Editor file={activeFile} write={write} />}
-            {!Editor && <Previewer file={activeFile} />}
+            {state.editFile && (
+              <Editor
+                file={state.activeFile}
+                write={write}
+                toggleEditFileMode={toggleEditFileMode}
+              />
+            )}
+            {!state.editFile && (
+              <Previewer
+                file={state.activeFile}
+                toggleEditFileMode={toggleEditFileMode}
+              />
+            )}
           </>
         )}
 
-        {!activeFile && (
+        {!state.activeFile && (
           <div className={css.empty}>Select a file to view or edit</div>
         )}
       </main>
