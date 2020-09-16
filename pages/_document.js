@@ -2,6 +2,7 @@ import React from "react";
 import Document from "next/document";
 import { ServerStyleSheet } from "styled-components";
 
+// Custom document file for styled-components setup
 export default class MyDocument extends Document {
   static async getInitialProps(ctx) {
     const sheet = new ServerStyleSheet();

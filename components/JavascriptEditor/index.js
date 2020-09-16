@@ -44,6 +44,8 @@ function JavascriptEditor({ file, write, toggleEditFileMode }) {
       <div className={css.editor}>
         <i>{fileName}</i>
         <EditorWrapper>
+          {/*Added react-simple-code-editor to add syntax highlighting for editing*/}
+          {/*Javascript/json files.*/}
           <Editor
             value={value}
             onValueChange={code => setValue(code)}

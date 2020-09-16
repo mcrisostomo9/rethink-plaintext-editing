@@ -5,7 +5,9 @@ import { useFileText } from "../../hooks";
 
 function MarkdownPreviewer({ file }) {
   const [value] = useFileText(file);
-
+  {
+    /*Using ReactMarkdown package to parse markdown text*/
+  }
   return <ReactMarkdown source={value} />;
 }
 

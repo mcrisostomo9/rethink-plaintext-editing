@@ -60,6 +60,7 @@ function MarkdownEditor({ file, write, toggleEditFileMode }) {
         </MarkdownSection>
         <MarkdownSection>
           <h3>Preview</h3>
+          {/*Using ReactMarkdown package to parse markdown text*/}
           <ReactMarkdown source={value} />
         </MarkdownSection>
       </Container>
